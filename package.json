@@ -1,0 +1,19 @@
+{
+  "name": "tiktok_dl",
+  "version": "1.0.0",
+  "description": "Download videos from TikTok via a Telegram Messenger request",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bennettwarner/tiktok_dl.git"
+  },
+  "author": "Bennett Warner",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bennettwarner/tiktok_dl/issues"
+  },
+  "homepage": "https://github.com/bennettwarner/tiktok_dl#readme"
+}
