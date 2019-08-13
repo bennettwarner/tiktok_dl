@@ -19,23 +19,17 @@ if (!fs.existsSync(downloadDir)) {
 }
 
 // Download video and return to user
-function getVid(video, ctx) {
+function getVid(tiktok_url, ctx) {
   axios
-    .get(video)
+    .get(tiktok_url)
     .then(response => {
-      const $ = cheerio.load(response.data);
-      page_data = JSON.parse(
-        $("script")
-          .slice(7)
-          .html()
-          .substr(23)
-      );
-      video_key = video.substring(21, video.length - 1);
-      direct_url =
-        page_data[Object.keys(page_data)[0]].videoData.itemInfos.video.urls[0];
+      let video = JSON.parse(
+        "{" + response.data.match(/"urls":\s*?\[.+?\]/g) + "}"
+      ).urls[0];
+      video_key = tiktok_url.substring(21, tiktok_url.length - 1);
       axios({
         method: "get",
-        url: direct_url,
+        url: video,
         responseType: "stream"
       }).then(function(response) {
         response.data.pipe(
@@ -50,10 +44,10 @@ function getVid(video, ctx) {
 // Take in message and validate
 bot.on("text", ctx => {
   if (ctx.update.message.from.id == process.env.RESTRICT_USER) {
-    video = ctx.update.message.text;
-    console.log(video);
-    if (video.match(/http:\/\/vm.tiktok.com\/.*\//g)) {
-      var resp = getVid(video, ctx);
+    video_url = ctx.update.message.text;
+    console.log(video_url);
+    if (video_url.match(/http:\/\/vm.tiktok.com\/.*\//g)) {
+      var resp = getVid(video_url, ctx);
     }
   }
 });
