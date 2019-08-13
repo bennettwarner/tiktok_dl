@@ -4,7 +4,6 @@ const Telegraf = require("telegraf");
 const cheerio = require("cheerio");
 const axios = require("axios");
 const fs = require("fs");
-const puppeteer = require("puppeteer");
 
 // Load config
 dotenv.config({ path: ".env" });
@@ -20,25 +19,32 @@ if (!fs.existsSync(downloadDir)) {
 }
 
 // Download video and return to user
-async function getVid(video, ctx) {
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  await page.goto(video);
-  direct_url = await page.evaluate(
-    "window.__INIT_PROPS__['/@:uniqueId/video/:id'].videoData.itemInfos.video.urls[0];"
-  );
-  await browser.close();
-  video_key = video.substring(21, video.length - 1);
-  axios({
-    method: "get",
-    url: direct_url,
-    responseType: "stream"
-  }).then(function(response) {
-    response.data.pipe(
-      fs.createWriteStream(downloadDir + "/" + video_key + ".mp4")
-    );
-    ctx.reply("👍");
-  });
+function getVid(video, ctx) {
+  axios
+    .get(video)
+    .then(response => {
+      const $ = cheerio.load(response.data);
+      page_data = JSON.parse(
+        $("script")
+          .slice(7)
+          .html()
+          .substr(23)
+      );
+      video_key = video.substring(21, video.length - 1);
+      direct_url =
+        page_data[Object.keys(page_data)[0]].videoData.itemInfos.video.urls[0];
+      axios({
+        method: "get",
+        url: direct_url,
+        responseType: "stream"
+      }).then(function(response) {
+        response.data.pipe(
+          fs.createWriteStream(downloadDir + "/" + video_key + ".mp4")
+        );
+        ctx.reply("👍");
+      });
+    })
+    .catch(error => console.log(error));
 }
 
 // Take in message and validate
