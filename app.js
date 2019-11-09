@@ -23,6 +23,7 @@ function getVid(tiktok_url, ctx) {
   axios
     .get(tiktok_url)
     .then(response => {
+      console.log("Page retrieved!");
       let video = JSON.parse(
         "{" + response.data.match(/"urls":\s*?\[.+?\]/g) + "}"
       ).urls[0];
@@ -35,6 +36,7 @@ function getVid(tiktok_url, ctx) {
         response.data.pipe(
           fs.createWriteStream(downloadDir + "/" + video_key + ".mp4")
         );
+        console.log("DL Successful");
         ctx.reply("👍");
       });
     })
@@ -43,10 +45,12 @@ function getVid(tiktok_url, ctx) {
 
 // Take in message and validate
 bot.on("text", ctx => {
+  console.log(ctx.update.message.from.id);
   if (ctx.update.message.from.id == process.env.RESTRICT_USER) {
     video_url = ctx.update.message.text;
     console.log(video_url);
-    if (video_url.match(/http:\/\/vm.tiktok.com\/.*\//g)) {
+    if (video_url.match(/https?:\/\/vm.tiktok.com\/.*\//g)) {
+      console.log("Attempting DL");
       var resp = getVid(video_url, ctx);
     }
   }
