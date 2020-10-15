@@ -27,9 +27,17 @@ function getVid(tiktok_url, ctx) {
       },
     })
     .then((response) => {
-      let video = JSON.parse(
+      console.log(response.data.match(/"urls":\s*?\[.+?\]/g))
+      let video;
+      try {
+        video = JSON.parse(
         "{" + response.data.match(/"urls":\s*?\[.+?\]/g) + "}"
-      ).urls[0];
+      ).urls[0];}
+      catch(error){
+        console.error(response.data)
+        ctx.reply("❌");
+        return
+      }
       video_key = tiktok_url.substring(21, tiktok_url.length - 1);
       if (video_key.length > 8) {
         video_key = Date.now();
