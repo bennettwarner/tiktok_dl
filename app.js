@@ -28,13 +28,14 @@ function getVid(tiktok_url, ctx) {
     })
     .then((response) => {
       console.log(response.data.match(/"urls":\s*?\[.+?\]/g))
+      cookies = response.headers['set-cookie'].toString().replace(/\n|\r/g, "").match(/tt_webid_?v?2?=\d{19};/g).toString().replace(/,/g, ' ')
+      console.log(cookies)
       let video;
       try {
         video = JSON.parse(
         "{" + response.data.match(/"urls":\s*?\[.+?\]/g) + "}"
       ).urls[0];}
       catch(error){
-        console.error(response.data)
         ctx.reply("❌");
         return
       }
@@ -49,6 +50,7 @@ function getVid(tiktok_url, ctx) {
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Linux; Android 8.0.0; SM-G960F Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.84 Mobile Safari/537.36",
+          Cookie: cookies,
           Referer: tiktok_url,
         },
       }).then(function (response) {
