@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/bennettwarner/tiktok_dl#readme",
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "cheerio": "^1.0.0-rc.3",
     "dotenv": "^8.2.0",
     "telegraf": "^3.33.3"
