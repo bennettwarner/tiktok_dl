@@ -19,6 +19,7 @@ if (!fs.existsSync(downloadDir)) {
 
 // Download video and return to user
 function getVid(tiktok_url, ctx) {
+  siteRE= /<script id=\"RENDER_DATA\" type=\"application\/json\">.*?<\/script>/g
   axios
     .get(tiktok_url, {
       headers: {
@@ -27,20 +28,19 @@ function getVid(tiktok_url, ctx) {
       },
     })
     .then((response) => {
-      console.log(response.data.match(/"urls":\s*?\[.+?\]/g))
+      console.log(JSON.parse(decodeURIComponent(response.data.match(siteRE)).substring(49, (decodeURIComponent(response.data.match(siteRE)).length - 9))).response.videoData.videoInfo.videoSrc)
       cookies = response.headers['set-cookie'].toString().replace(/\n|\r/g, "").match(/tt_webid_?v?2?=\d{19};/g).toString().replace(/,/g, ' ')
       console.log(cookies)
       let video;
       try {
-        video = JSON.parse(
-        "{" + response.data.match(/"urls":\s*?\[.+?\]/g) + "}"
-      ).urls[0];}
+        video = JSON.parse(decodeURIComponent(response.data.match(siteRE)).substring(49, (decodeURIComponent(response.data.match(siteRE)).length - 9))).response.videoData.videoInfo.videoSrc;}
       catch(error){
         ctx.reply("❌");
         return
       }
-      video_key = tiktok_url.substring(21, tiktok_url.length - 1);
-      if (video_key.length > 8) {
+      video_key = tiktok_url.substring(22, tiktok_url.length - 1);
+      console.log(video_key)
+      if (video_key.length > 9) {
         video_key = Date.now();
       }
       axios({
