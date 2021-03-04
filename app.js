@@ -1,10 +1,10 @@
 // Imports
-const dotenv = require("dotenv");
-const Telegraf = require("telegraf");
-const axios = require("axios");
-const fs = require("fs");
-const { exec } = require("child_process");
-const { stdout, stderr } = require("process");
+import dotenv from "dotenv";
+import { Telegraf } from "telegraf";
+import NextcloudClient from 'nextcloud-link';
+import { readFileSync, existsSync, mkdirSync, unlinkSync } from "fs";
+import { exec } from "child_process";
+import { stdout, stderr } from "process";
 
 // Load config
 dotenv.config({ path: ".env" });
@@ -14,64 +14,39 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
 //Set Download Directory and create it if it does not exist
 var downloadDir = process.env.DOWNLOAD_DIR;
+if (!existsSync('./temp')) {
+  mkdirSync('./temp');
+}
 
-// Broken by tiktok changes
+async function upload(video_key) {
+  console.log("Uploaded started for: " + video_key);
+  try {
+    const client = new NextcloudClient({
+      url: process.env.NEXTCLOUD_ADDR,
+      username: process.env.NEXTCLOUD_USER,
+      password: process.env.NEXTCLOUD_PASS,
+    });
 
-// Download video and return to user
-// function getVid(tiktok_url, ctx) {
-//   siteRE= /\"downloadAddr\":\"https?:\/\/.*?\"/g
-//   axios
-//     .get(tiktok_url, {
-//       headers: {
-//         "User-Agent":
-//           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.81",
-//       },
-//     })
-//     .then((response) => {
-//       console.log(response.headers)
-//       console.log(response.data.match(siteRE)[0].substring(16, response.data.match(siteRE)[0].length - 1).replace(/\\u0026/g, "&"))
-//       cookies = response.headers['set-cookie'].toString().replace(/\n|\r/g, "").match(/tt_webid_?v?2?=\d{19};/g).toString().replace(/,/g, ' ')
-//       console.log(cookies)
-//       let video;
-//       try {
-//         video = response.data.match(siteRE)[0].substring(16, response.data.match(siteRE)[0].length - 1).replace(/\\u0026/g, "&");}
-//       catch(error){
-//         console.log(error)
-//         ctx.reply("❌");
-//         return
-//       }
-//       video_key = tiktok_url.substring(22, tiktok_url.length - 1);
-//       console.log(video_key)
-//       if (video_key.length > 9) {
-//         video_key = Date.now();
-//       }
-//       axios({
-//         method: "get",
-//         url: video,
-//         responseType: "stream",
-//         headers: {
-//           "User-Agent":
-//             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36 Edg/88.0.705.81",
-//             Referer: "https://www.tiktok.com/",
-//             Cookie: cookies,
-//         },
-//       }).then(function (response) {
-//         response.data.pipe(
-//           fs.createWriteStream(downloadDir + "/" + video_key + ".mp4")
-//         );
-//         ctx.reply("👍");
-//       });
-//     })
-//     .catch((error) => console.log(error.response));
-// }
+    await client.checkConnectivity();
+
+    await client.put((downloadDir + video_key + ".mp4"), readFileSync("./temp/" + video_key + ".mp4"));
+    console.log("Uploaded complete for: " + video_key);
+    unlinkSync("./temp/" + video_key + ".mp4")
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 function getVidYTDL(tiktok_url, ctx) {
-      video_key = tiktok_url.substring(22, tiktok_url.length - 1);
-      console.log(video_key)
-      cmd = "youtube-dl --output '" + downloadDir + video_key + ".mp4' " + tiktok_url;
-      if (video_key.length > 9) {
-        cmd = "youtube-dl --output '" + downloadDir + "%(id)s.mp4' " + tiktok_url;
-      }
+  var video_key;
+  video_key = tiktok_url.substring(22, tiktok_url.length - 1);
+        if (video_key.length > 9) {
+    video_key = Date.now();
+  }
+  var cmd;
+  cmd = "youtube-dl --output '" + './temp/' + video_key + ".mp4' " + tiktok_url;
+  console.log(video_key)
+
   exec(cmd, (error, stdout, stderr) => {
     if (error) {
         console.log(`error: ${error.message}`);
@@ -80,10 +55,11 @@ function getVidYTDL(tiktok_url, ctx) {
     }
     if (stderr) {
         console.log(`stderr: ${stderr}`);
-        ctx.reply("❌ - " + stderr);
+        
         return;
     }
     console.log(`stdout: ${stdout}`);
+    upload(video_key)
     ctx.reply("👍");
     return;
 });
@@ -93,6 +69,7 @@ function getVidYTDL(tiktok_url, ctx) {
 // Take in message and validate
 bot.on("text", (ctx) => {
   if (ctx.update.message.from.id == process.env.RESTRICT_USER) {
+    var video_url;
     video_url = ctx.update.message.text;
     console.log(video_url);
     if (video_url.match(/https?:\/\/v?m?w?w?w?.tiktok.com\/.*\/.*/g)) {
@@ -104,3 +81,7 @@ bot.on("text", (ctx) => {
   }
 });
 bot.launch();
+
+// Enable graceful stop
+process.once('SIGINT', () => bot.stop('SIGINT'))
+process.once('SIGTERM', () => bot.stop('SIGTERM'))
