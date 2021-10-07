@@ -72,7 +72,7 @@ bot.on("text", (ctx) => {
     var video_url;
     video_url = ctx.update.message.text;
     console.log(video_url);
-    if (video_url.match(/https?:\/\/v?m?w?w?w?.tiktok.com\/.*\/.*/g)) {
+    if (video_url.match(/https?:\/\/v?m?w?w?w?.tiktok.com\/.*/g)) {
       var resp = getVidYTDL(video_url, ctx);
     }
     else{
